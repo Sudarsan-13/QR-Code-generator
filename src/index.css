@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes gradient-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+body {
+  font-family: "Arial", sans-serif;
+}
+
+.bg-gradient-to-br {
+  background-size: 200% 200%;
+  animation: gradient-bg 8s ease infinite;
+}
+
+@media (max-width: 1024px) {
+  .lg\\:flex-row {
+    flex-direction: column;
+  }
+}
